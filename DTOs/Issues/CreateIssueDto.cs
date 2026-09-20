@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using IssueTracker.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace IssueTracker.DTOs.Issues
 {
@@ -11,8 +12,8 @@ namespace IssueTracker.DTOs.Issues
         [MaxLength(1000)]
         public string Description { get; set; } = string.Empty;
         [Required]
-        public string Priority { get; set; } = "MEDIUM";   
+        public IssuePriority Priority { get; set; } = IssuePriority.MEDIUM;
         [Required]
-        public string Type { get; set; } = "TASK";  
+        public IssueType Type { get; set; } = IssueType.TASK;   
     }
 }

@@ -71,6 +71,44 @@ namespace IssueTracker.Services.IssueService
 
 
 
+        // new methods for changing the status of an issue
+        public async Task<bool> StartAsync(int id)
+        {
+            var issue = await GetByIdAsync(id);
+            if (issue is null)
+            {
+                return false;
+            }
+
+            issue.Start();
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        public async Task<bool> ResolveAsync(int id)
+        {
+            var issue = await GetByIdAsync(id);
+            if(issue is null)
+            {
+                return false;
+            }
+
+            issue.Resolve();
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        public async Task<bool> CloseAsync(int id)
+        {
+            var issue = await GetByIdAsync(id);
+            if (issue is null)
+            {
+                return false;
+            }
+            issue.Close();
+            await _context.SaveChangesAsync();
+            return true;
+        }
 
     }
 }

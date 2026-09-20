@@ -1,6 +1,7 @@
 
 using IssueTracker.Services.IssueService;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 namespace IssueTracker
 {
@@ -10,7 +11,12 @@ namespace IssueTracker
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.Converters.Add(
+                new JsonStringEnumConverter()
+            );
+        });
 
             builder.Services.AddDbContext<Data.IssueTrackerDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

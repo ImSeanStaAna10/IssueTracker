@@ -29,8 +29,8 @@ namespace IssueTracker.Controllers
                 Title = i.Title,
                 Description = i.Description,
                 Status = i.Status,
-                Priority = i.Priority,
                 Type = i.Type,
+                Priority  = i.Priority  ,
                 CreatedAt = i.CreatedAt,
                 UpdatedAt = i.UpdatedAt
             });
@@ -122,5 +122,41 @@ namespace IssueTracker.Controllers
 
             return NoContent();
         }
+        [HttpPost("{id}/start")] public async Task<IActionResult> Start(int id)
+        {
+            var started = await _issueService.StartAsync(id);
+
+            if (!started)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+
+        }
+        [HttpPost("{id}/resolve")] public async Task<IActionResult>Resolve (int id)
+        {
+            var resolved = await _issueService.ResolveAsync(id);
+
+            if (!resolved)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+
+
+        }
+        [HttpPost("{id}/close")] public async Task<IActionResult> Close(int id)
+        {
+            var closed = await _issueService.CloseAsync(id);
+            if (!closed)
+            {
+                return NotFound();
+            }
+            return NoContent();
+        }   
+        
+
     }
 }

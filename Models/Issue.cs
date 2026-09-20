@@ -1,23 +1,17 @@
-﻿namespace IssueTracker.Api.Models;
+﻿using IssueTracker.Enums;
+
+namespace IssueTracker.Api.Models;
 
 public class Issue
 {
     public int Id { get; set; }
-
     public string Title { get; set; } = string.Empty;
-
     public string Description { get; set; } = string.Empty;
-
     public string Status { get; private set; } = "OPEN";
-
-    public string Priority { get; set; } = "MEDIUM";
-
-    public string Type { get; set; } = "TASK";
-
+    public IssuePriority Priority { get; set; } = IssuePriority.MEDIUM;
+    public IssueType Type { get; set; } = IssueType.TASK;
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
-
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
-
     public void Start()
     {
         Status = "IN_PROGRESS";
