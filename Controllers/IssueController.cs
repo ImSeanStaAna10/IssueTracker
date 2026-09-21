@@ -67,6 +67,7 @@ namespace IssueTracker.Controllers
             // Manual Mapping the CreateIssueDto to an Issue model
             var issue = new Issue
             {
+                ProjectId = createIssueDto.ProjectId,   
                 Title =  createIssueDto.Title,
                 Description = createIssueDto.Description,   
                 Priority = createIssueDto.Priority,
@@ -89,7 +90,11 @@ namespace IssueTracker.Controllers
                 UpdatedAt = createdIssue.UpdatedAt
             };
 
-            return Ok(response);
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = createdIssue.Id},
+                response
+                );
         }
         [HttpPut("{id}")] public async Task<IActionResult> Update(int id, UpdateIssueDto updateIssueDto)
         {

@@ -1,4 +1,5 @@
 ﻿using IssueTracker.Enums;
+using IssueTracker.Models;
 
 namespace IssueTracker.Api.Models;
 
@@ -10,6 +11,8 @@ public class Issue
     public string Status { get; private set; } = "OPEN";
     public IssuePriority Priority { get; set; } = IssuePriority.MEDIUM;
     public IssueType Type { get; set; } = IssueType.TASK;
+    public int ProjectId { get; set; }
+    public Project Project { get; set; } = null!;   
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
     public void Start()

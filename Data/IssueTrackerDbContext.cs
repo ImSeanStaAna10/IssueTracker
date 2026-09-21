@@ -1,4 +1,6 @@
-﻿using IssueTracker.Api.Models;
+﻿
+using IssueTracker.Api.Models;
+using IssueTracker.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace IssueTracker.Data
@@ -12,6 +14,7 @@ namespace IssueTracker.Data
         }
 
         public DbSet<Issue> Issues { get; set; } = null!;
+        public DbSet<Project> Projects { get; set; } = null!;   
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

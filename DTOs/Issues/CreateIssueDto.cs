@@ -1,19 +1,22 @@
 ﻿using IssueTracker.Enums;
 using System.ComponentModel.DataAnnotations;
 
-namespace IssueTracker.DTOs.Issues
+namespace IssueTracker.DTOs.Issues;
+
+public class CreateIssueDto
 {
-    public class CreateIssueDto
-    {
-        [Required]
-        [MaxLength(200)]
-        public string Title { get; set; } = string.Empty;
-        [Required]
-        [MaxLength(1000)]
-        public string Description { get; set; } = string.Empty;
-        [Required]
-        public IssuePriority Priority { get; set; } = IssuePriority.MEDIUM;
-        [Required]
-        public IssueType Type { get; set; } = IssueType.TASK;   
-    }
+    [Range(1, int.MaxValue)]
+    public int ProjectId { get; set; }
+
+    [Required]
+    [MaxLength(200)]
+    public string Title { get; set; } = string.Empty;
+
+    [Required]
+    [MaxLength(1000)]
+    public string Description { get; set; } = string.Empty;
+
+    public IssuePriority Priority { get; set; } = IssuePriority.MEDIUM;
+
+    public IssueType Type { get; set; } = IssueType.TASK;
 }
