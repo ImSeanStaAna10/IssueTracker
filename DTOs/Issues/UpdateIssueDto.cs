@@ -6,6 +6,10 @@ namespace IssueTracker.DTOs.Issues
     public class UpdateIssueDto
     {
 
+
+        [Range(1, int.MaxValue)]
+        public int ProjectId { get; set; }
+
         [Required]
         [MaxLength(200)]
         public string Title { get; set; } = string.Empty;

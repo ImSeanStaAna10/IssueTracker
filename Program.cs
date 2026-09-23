@@ -1,4 +1,5 @@
 
+using IssueTracker.Exceptions;
 using IssueTracker.Services.IssueService;
 using IssueTracker.Services.ProjectService;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,13 @@ namespace IssueTracker
             );
         });
 
+
+            // Register AddExceptionHandler
+            builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+            //standardized error response format.
+            builder.Services.AddProblemDetails();
+
             // Add database context with SQL Server connection
             builder.Services.AddDbContext<Data.IssueTrackerDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -31,6 +39,10 @@ namespace IssueTracker
 
             // Build the application
             var app = builder.Build();
+
+
+            // use ExceptionHanlder
+            app.UseExceptionHandler();
 
             // Configure the HTTP request pipeline
             app.UseHttpsRedirection();

@@ -1,7 +1,7 @@
 ﻿using IssueTracker.Api.Models;
 using IssueTracker.Data;
 using Microsoft.EntityFrameworkCore;
-
+using IssueTracker.Exceptions;
 namespace IssueTracker.Services.IssueService
 {
     public class IssueService : IIssueService
@@ -27,6 +27,16 @@ namespace IssueTracker.Services.IssueService
 
         public async Task<Issue> CreateAsync(Issue issue)
         {
+            var projectExists = await _context.Projects
+                .AnyAsync(p => p.Id == issue.ProjectId);
+
+            if (!projectExists)
+            {
+
+                throw new ProjectNotFoundException("Project Id not exists");
+            }
+
+
             _context.Issues.Add(issue);
 
             await _context.SaveChangesAsync();
@@ -43,6 +53,17 @@ namespace IssueTracker.Services.IssueService
                 return false;
             }
 
+
+            var projectExist = await _context.Projects
+                .AnyAsync(p => p.Id == issue.ProjectId);
+
+
+            if (!projectExist)
+            {
+                throw new ProjectNotFoundException("Project Id not Exist");
+            }
+
+            existingIssue.ProjectId = issue.ProjectId;
             existingIssue.Title = issue.Title;
             existingIssue.Description = issue.Description;
             existingIssue.Priority = issue.Priority;

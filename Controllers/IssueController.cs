@@ -26,6 +26,7 @@ namespace IssueTracker.Controllers
             var response = issues.Select(i => new IssueResponseDto
             {
                 Id = i.Id,
+                ProjectId = i.ProjectId,
                 Title = i.Title,
                 Description = i.Description,
                 Status = i.Status,
@@ -50,6 +51,7 @@ namespace IssueTracker.Controllers
             {
 
                 Id = issue.Id,
+                ProjectId = issue.ProjectId,
                 Title = issue.Title,
                 Description = issue.Description,
                 Status = issue.Status,
@@ -81,6 +83,7 @@ namespace IssueTracker.Controllers
             var response = new IssueResponseDto
             {
                 Id = createdIssue.Id,
+                ProjectId = createdIssue.ProjectId,
                 Title = createdIssue.Title,
                 Description = createdIssue.Description,
                 Status = createdIssue.Status,
@@ -101,6 +104,7 @@ namespace IssueTracker.Controllers
             // Manual Mapping the UpdateIssueDto to an Issue model
             var issue = new Issue
             {
+                ProjectId = updateIssueDto.ProjectId,
                 Title = updateIssueDto.Title,
                 Description = updateIssueDto.Description,
                 Priority = updateIssueDto.Priority,
