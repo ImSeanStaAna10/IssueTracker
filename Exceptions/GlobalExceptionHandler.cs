@@ -13,6 +13,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         var statusCode = exception switch
         {
             ProjectNotFoundException => StatusCodes.Status400BadRequest,
+            InvalidIssueException => StatusCodes.Status400BadRequest,
             _ => StatusCodes.Status500InternalServerError
         };
 
