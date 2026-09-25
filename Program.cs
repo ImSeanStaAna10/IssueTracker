@@ -40,6 +40,8 @@ namespace IssueTracker
             // Build the application
             var app = builder.Build();
 
+            //TEMPORARY DEBUGGER
+            //var connectionString = builder.Configuration.GetConnectionString("DefaultConnection"); Console.WriteLine($"[DEBUG] Connection string loaded: {!string.IsNullOrEmpty(connectionString)}");
 
             // use ExceptionHanlder
             app.UseExceptionHandler();

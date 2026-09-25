@@ -1,0 +1,134 @@
+# =========================================================
+# DOCKER COMPOSE
+# =========================================================
+# This file defines all the containers/services
+# needed by our Issue Tracker application.
+#
+# We currently have 2 services:
+# 1. sqlserver -> Database
+# 2. api       -> ASP.NET Core Web API
+# =========================================================
+
+services:
+
+  # =======================================================
+  # SQL SERVER SERVICE
+  # =======================================================
+  sqlserver:
+
+    # Use Microsoft's official SQL Server Docker image.
+    # Docker will download this image if it doesn't exist
+    # on your machine yet.
+    image: mcr.microsoft.com/mssql/server:2022-latest
+
+    # Give our SQL Server container a readable name.
+    # This allows commands like:
+    # docker logs issue-tracker-sqlserver
+    container_name: issue-tracker-sqlserver
+
+    # Environment variables required by SQL Server.
+    environment:
+
+      # Accept Microsoft's SQL Server license agreement.
+      ACCEPT_EULA: "Y"
+
+      # Password for the SQL Server 'sa' administrator account.
+      # IMPORTANT:
+      # We will move this to a .env file later
+      # so we don't expose the password in Git.
+      MSSQL_SA_PASSWORD: "${SQL_PASSWORD}"
+
+    # Port mapping:
+    #
+    # HOST:CONTAINER
+    #
+    # Windows/host port 1433
+    #        ↓
+    # SQL Server container port 1433
+    ports:
+      - "1433:1433"
+
+    # Persistent storage for SQL Server.
+    #
+    # Without this, deleting/recreating the container
+    # could also remove the database data.
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+
+
+  # =======================================================
+  # ASP.NET CORE API SERVICE
+  # =======================================================
+  api:
+
+    # Build the API image using our Dockerfile.
+    build:
+
+      # Current directory.
+      # This is the IssueTracker project folder.
+      context: .
+
+      # Tell Docker which Dockerfile to use.
+      dockerfile: Dockerfile
+
+    # Give our API container a readable name.
+    container_name: issue-tracker-api
+
+    # Environment variables for ASP.NET Core.
+    environment:
+
+      # Tell ASP.NET Core to listen on port 8080.
+      ASPNETCORE_HTTP_PORTS: "8080"
+
+      # ASP.NET Core configuration:
+      #
+      # ConnectionStrings__DefaultConnection
+      #
+      # The double underscore (__) represents
+      # the nested configuration:
+      #
+      # ConnectionStrings
+      #     └── DefaultConnection
+      #
+      # IMPORTANT:
+      # "sqlserver" is the Docker Compose service name.
+      # We DON'T use localhost here because localhost
+      # inside the API container means the API container itself.
+
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=IssueTrackerDb;User Id=sa;Password=${SQL_PASSWORD};TrustServerCertificate=True"
+
+    # Port mapping:
+    #
+    # HOST:CONTAINER
+    #
+    # localhost:8080
+    #      ↓
+    # API container:8080
+    ports:
+      - "8080:8080"
+
+    # Start SQL Server service before the API service.
+    #
+    # This establishes the startup dependency:
+    #
+    # SQL Server
+    #     ↓
+    # API
+    depends_on:
+      - sqlserver
+
+
+# =========================================================
+# DOCKER VOLUMES
+# =========================================================
+# Declare the persistent volume used by SQL Server.
+#
+# This volume is used here:
+#
+# sqlserver_data:/var/opt/mssql
+#
+# Docker manages the actual storage location.
+# =========================================================
+
+volumes:
+  sqlserver_data:

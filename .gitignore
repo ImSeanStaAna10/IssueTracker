@@ -19,3 +19,6 @@ packages/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Docker secrets
+.env
