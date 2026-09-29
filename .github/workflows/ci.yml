@@ -71,10 +71,10 @@ jobs:
           # Temporary GitHub token na gagamitin para authentication
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 8: Bigyan ng GHCR-compatible name yung Docker image
+        # Step 8: Bigyan ng GHCR-compatible name yung Docker image
       - name: Tag Docker Image
-        run: docker tag issue-tracker-api ghcr.io/${{ github.repository_owner }}/issue-tracker-api:latest
+        run: docker tag issue-tracker-api ghcr.io/imseanstaana10/issue-tracker-api:latest
 
       # Step 9: Push Docker Image papuntang GHCR
       - name: Push Docker Image
-        run: docker push ghcr.io/${{ github.repository_owner }}/issue-tracker-api:latest
+        run: docker push ghcr.io/imseanstaana10/issue-tracker-api:latest
