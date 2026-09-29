@@ -1,4 +1,4 @@
 <Solution>
-  <Project Path="../IssueTracker.Tests/IssueTracker.Tests.csproj" />
-  <Project Path="IssueTracker.csproj" />
+  <Project Path="IssueTracker/IssueTracker.csproj" />
+  <Project Path="IssueTracker.Tests/IssueTracker.Tests.csproj" />
 </Solution>
