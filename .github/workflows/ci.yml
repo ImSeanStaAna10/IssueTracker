@@ -5,6 +5,14 @@ name: IssueTracker Backend CI
 # Sa case natin, every time may git push.
 on:
   push:
+    branches:
+      - Develop
+      - main
+
+  pull_request:
+    branches:
+      - Develop
+      - main
 
 # Dito natin nilalagay yung mga trabaho na gagawin ni GitHub
 jobs:
@@ -15,7 +23,6 @@ jobs:
 
     # Mga step na gagawin, one by one
     steps:
-
       # Step 1: Kunin muna ni GitHub yung code natin from repository
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,7 +32,7 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           # Gagamit tayo ng .NET 10
-          dotnet-version: '10.0.x'
+          dotnet-version: "10.0.x"
 
       # Step 3: I-download at ihanda yung mga NuGet packages ng project
       - name: Restore dependencies
@@ -40,3 +47,7 @@ jobs:
       # --no-build = huwag nang mag-build ulit kasi ginawa na natin sa Step 4
       - name: Test
         run: dotnet test --no-build
+
+      # Step 6: Ibuild yung docker image ng backend
+      - name: Build Docker Image
+        run: docker build -t issue-tracker-api ./IssueTracker
