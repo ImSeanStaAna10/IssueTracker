@@ -1,4 +1,3 @@
-
 using IssueTracker.Exceptions;
 using IssueTracker.Services.IssueService;
 using IssueTracker.Services.ProjectService;
@@ -14,14 +13,16 @@ namespace IssueTracker
             // Create a WebApplication builder
             var builder = WebApplication.CreateBuilder(args);
 
+            var connectionString =
+                builder.Configuration.GetConnectionString("DefaultConnection");
+
             // SERIALIZATION: Configure JSON serialization options to handle enum values as strings
             builder.Services.AddControllers().AddJsonOptions(options =>
-        {
-            options.JsonSerializerOptions.Converters.Add(
-                new JsonStringEnumConverter()
-            );
-        });
-
+            {
+                options.JsonSerializerOptions.Converters.Add(
+                    new JsonStringEnumConverter()
+                );
+            });
 
             // Register AddExceptionHandler
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -31,7 +32,7 @@ namespace IssueTracker
 
             // Add database context with SQL Server connection
             builder.Services.AddDbContext<Data.IssueTrackerDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(connectionString));
 
             // Register services for dependency injection
             builder.Services.AddScoped<IIssueService, IssueService>();
@@ -39,9 +40,6 @@ namespace IssueTracker
 
             // Build the application
             var app = builder.Build();
-
-            //TEMPORARY DEBUGGER
-            //var connectionString = builder.Configuration.GetConnectionString("DefaultConnection"); Console.WriteLine($"[DEBUG] Connection string loaded: {!string.IsNullOrEmpty(connectionString)}");
 
             // use ExceptionHanlder
             app.UseExceptionHandler();
@@ -51,7 +49,6 @@ namespace IssueTracker
 
             // Enable routing and map controller endpoints
             app.MapControllers();
-
 
             // Run the application
             app.Run();

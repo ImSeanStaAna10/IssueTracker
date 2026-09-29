@@ -1,0 +1,42 @@
+# Name ng GitHub Workflow
+name: IssueTracker Backend CI
+
+# Kailan tatakbo yung workflow?
+# Sa case natin, every time may git push.
+on:
+  push:
+
+# Dito natin nilalagay yung mga trabaho na gagawin ni GitHub
+jobs:
+  # Ito yung main job natin: build at test ng backend
+  build:
+    # Si GitHub ang magbibigay ng Ubuntu machine para patakbuhin ito
+    runs-on: ubuntu-latest
+
+    # Mga step na gagawin, one by one
+    steps:
+
+      # Step 1: Kunin muna ni GitHub yung code natin from repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Ihanda yung .NET environment na kailangan ng project
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          # Gagamit tayo ng .NET 10
+          dotnet-version: '10.0.x'
+
+      # Step 3: I-download at ihanda yung mga NuGet packages ng project
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # Step 4: I-build yung backend para malaman kung walang build errors
+      # --no-restore = huwag nang mag-restore ulit kasi ginawa na natin sa Step 3
+      - name: Build
+        run: dotnet build --no-restore
+
+      # Step 5: Patakbuhin yung automated tests natin
+      # --no-build = huwag nang mag-build ulit kasi ginawa na natin sa Step 4
+      - name: Test
+        run: dotnet test --no-build
