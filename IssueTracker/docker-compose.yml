@@ -95,7 +95,7 @@ services:
       # We DON'T use localhost here because localhost
       # inside the API container means the API container itself.
 
-      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=IssueTrackerDb;User Id=sa;Password=${SQL_PASSWORD};TrustServerCertificate=True"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=IssueTrackerDb_Dev;User Id=sa;Password=${SQL_PASSWORD};TrustServerCertificate=True"
 
     # Port mapping:
     #
