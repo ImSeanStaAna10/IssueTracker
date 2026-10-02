@@ -28,7 +28,6 @@ public class IssueTests
     }
     #endregion
 
-
     #region -- RESOLVE --
     [Fact] public void Resolve_ShouldChangeStatusToClose()
     {
@@ -43,8 +42,6 @@ public class IssueTests
         Assert.Throws<InvalidIssueException>(() => issue.Resolve());
     }
     #endregion
-
-
 
     #region -- CLOSE --
     [Fact] public void Close_ShouldChangeStatusToResolve()
