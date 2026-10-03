@@ -2,7 +2,7 @@
 using IssueTracker.Exceptions;
 using Xunit;
 
-namespace IssueTracker.Tests;
+namespace IssueTracker.Tests.Issues;
 
 
 public class IssueTests
