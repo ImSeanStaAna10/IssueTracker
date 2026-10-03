@@ -3,6 +3,9 @@
 # Stop the script if any command fails
 set -e
 
+# Go to the folder containing docker-compose.dev.yml
+cd IssueTracker
+
 # Pull the latest API image from GHCR
 docker compose -f docker-compose.dev.yml pull api
 
