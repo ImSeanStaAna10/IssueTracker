@@ -98,3 +98,14 @@ jobs:
       - name: Push Docker Image
         if: github.event_name == 'push'
         run: docker push ghcr.io/imseanstaana10/issue-tracker-api:$IMAGE_TAG
+
+  # Test job para sa self-hosted runner
+  test-runner:
+    # Gagamitin nito yung sariling Windows PC natin
+    # na naka-register bilang GitHub self-hosted runner
+    runs-on: self-hosted
+
+    steps:
+      # Test kung nakakatanggap ng job yung sariling runner natin
+      - name: Test Self-Hosted Runner
+        run: echo "This is a test for the self-hosted runner."
