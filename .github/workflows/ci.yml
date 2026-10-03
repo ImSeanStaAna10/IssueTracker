@@ -99,13 +99,30 @@ jobs:
         if: github.event_name == 'push'
         run: docker push ghcr.io/imseanstaana10/issue-tracker-api:$IMAGE_TAG
 
-  # Test job para sa self-hosted runner
-  test-runner:
-    # Gagamitin nito yung sariling Windows PC natin
+  # Deploy job para sa DEV environment
+  deploy-dev:
+    # Gagamitin yung sariling Windows PC natin
     # na naka-register bilang GitHub self-hosted runner
     runs-on: self-hosted
 
+    # Hintayin muna na successful ang build job
+    needs: build
+
+    # DEV deployment lamang kapag push sa Develop
+    if:
+      github.event_name == 'push' && github.ref == 'refs/heads/Develop'
+
+      # Securely kunin ang SQL password mula sa GitHub Secret
+    env:
+      SQL_PASSWORD: ${{ secrets.DEV_SQL_PASSWORD }}
+
     steps:
-      # Test kung nakakatanggap ng job yung sariling runner natin
-      - name: Test Self-Hosted Runner
-        run: echo "This is a test for the self-hosted runner."
+      # Step 1: Kunin muna yung repository code
+      # Kailangan ito para makita ng runner yung deploy-dev.sh
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Patakbuhin yung deployment script gamit ang Git Bash
+      - name: Deploy to DEV
+        shell: bash
+        run: ./deploy-dev.sh
