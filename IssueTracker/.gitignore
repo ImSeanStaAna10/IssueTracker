@@ -22,3 +22,6 @@ Thumbs.db
 
 # Docker secrets
 .env
+
+# Local development configuration
+appsettings.Development.json

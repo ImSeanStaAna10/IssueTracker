@@ -2,20 +2,33 @@
 name: IssueTracker Backend CI
 
 # Kailan tatakbo yung workflow?
-# Sa case natin, every time may git push.
+# Tatakbo kapag may git push sa Develop/main
+# o may Pull Request papunta sa Develop/main.
 on:
   push:
+    branches:
+      - Develop
+      - main
+
+  pull_request:
+    branches:
+      - Develop
+      - main
 
 # Dito natin nilalagay yung mga trabaho na gagawin ni GitHub
 jobs:
-  # Ito yung main job natin: build at test ng backend
+  # Ito yung main job natin: build, test, at Docker image
   build:
     # Si GitHub ang magbibigay ng Ubuntu machine para patakbuhin ito
     runs-on: ubuntu-latest
 
+    # Permissions na kailangan ng workflow
+    permissions:
+      contents: read
+      packages: write
+
     # Mga step na gagawin, one by one
     steps:
-
       # Step 1: Kunin muna ni GitHub yung code natin from repository
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,7 +38,7 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           # Gagamit tayo ng .NET 10
-          dotnet-version: '10.0.x'
+          dotnet-version: "10.0.x"
 
       # Step 3: I-download at ihanda yung mga NuGet packages ng project
       - name: Restore dependencies
@@ -40,3 +53,76 @@ jobs:
       # --no-build = huwag nang mag-build ulit kasi ginawa na natin sa Step 4
       - name: Test
         run: dotnet test --no-build
+
+      # Step 6: Alamin kung anong Docker tag ang gagamitin
+      # Develop branch = develop tag
+      # main branch = main tag
+      - name: Set Docker Image Tag
+        if: github.event_name == 'push'
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "Develop" ]; then
+            echo "IMAGE_TAG=develop" >> "$GITHUB_ENV"
+          elif [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "IMAGE_TAG=main" >> "$GITHUB_ENV"
+          fi
+
+      # Step 7: I-build yung Docker image ng backend
+      # Tatakbo lang kapag actual push, hindi kapag Pull Request
+      - name: Build Docker Image
+        if: github.event_name == 'push'
+        run: docker build -t issue-tracker-api ./IssueTracker
+
+      # Step 8: Mag-login sa GitHub Container Registry
+      # Tatakbo lang kapag actual push
+      - name: Login to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          # GHCR ang container registry na gagamitin natin
+          registry: ghcr.io
+
+          # GitHub account na nag-trigger ng workflow
+          username: ${{ github.actor }}
+
+          # Temporary GitHub token na gagamitin para authentication
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 9: Bigyan ng tamang GHCR tag yung Docker image
+      # Develop = :develop
+      # main = :main
+      - name: Tag Docker Image
+        if: github.event_name == 'push'
+        run: docker tag issue-tracker-api ghcr.io/imseanstaana10/issue-tracker-api:$IMAGE_TAG
+
+      # Step 10: Push Docker Image papuntang GHCR
+      - name: Push Docker Image
+        if: github.event_name == 'push'
+        run: docker push ghcr.io/imseanstaana10/issue-tracker-api:$IMAGE_TAG
+
+  # Deploy job para sa DEV environment
+  deploy-dev:
+    # Gagamitin yung sariling Windows PC natin
+    # na naka-register bilang GitHub self-hosted runner
+    runs-on: self-hosted
+
+    # Hintayin muna na successful ang build job
+    needs: build
+
+    # DEV deployment lamang kapag push sa Develop
+    if:
+      github.event_name == 'push' && github.ref == 'refs/heads/Develop'
+
+      # Securely kunin ang SQL password mula sa GitHub Secret
+    env:
+      SQL_PASSWORD: ${{ secrets.DEV_SQL_PASSWORD }}
+
+    steps:
+      # Step 1: Kunin muna yung repository code
+      # Kailangan ito para makita ng runner yung deploy-dev.sh
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Patakbuhin yung deployment script gamit ang Git Bash
+      - name: Deploy to DEV
+        shell: bash
+        run: ./deploy-dev.sh

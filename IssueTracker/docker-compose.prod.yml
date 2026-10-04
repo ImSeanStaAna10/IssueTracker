@@ -1,0 +1,36 @@
+# SQL SERVER SERVICE
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: issue-tracker-sqlserver-prod
+
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${SQL_PASSWORD}"
+
+    ports:
+      - "1434:1433"
+
+    volumes:
+      - sqlserver_data_prod:/var/opt/mssql
+
+  # API SERVICE
+  api:
+    image: ghcr.io/imseanstaana10/issue-tracker-api:main
+
+    container_name: issue-tracker-api-prod
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=IssueTrackerDb;User Id=sa;Password=${SQL_PASSWORD};TrustServerCertificate=True"
+
+    ports:
+      - "9090:8080"
+
+    depends_on:
+      - sqlserver
+
+# DOCKER VOLUMES
+volumes:
+  sqlserver_data_prod:
