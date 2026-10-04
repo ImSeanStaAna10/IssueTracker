@@ -1,5 +1,5 @@
 # SQL SERVER SERVICE
-
+name: issuetracker-dev
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest

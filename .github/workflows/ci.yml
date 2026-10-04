@@ -17,9 +17,9 @@ on:
 
 # Dito natin nilalagay yung mga trabaho na gagawin ni GitHub
 jobs:
-  # Ito yung main job natin: build, test, at Docker image
+  # Main job: build, test, at Docker image
   build:
-    # Si GitHub ang magbibigay ng Ubuntu machine para patakbuhin ito
+    # Si GitHub ang magbibigay ng Ubuntu machine
     runs-on: ubuntu-latest
 
     # Permissions na kailangan ng workflow
@@ -27,36 +27,30 @@ jobs:
       contents: read
       packages: write
 
-    # Mga step na gagawin, one by one
     steps:
-      # Step 1: Kunin muna ni GitHub yung code natin from repository
+      # Step 1: Kunin muna ni GitHub yung code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Ihanda yung .NET environment na kailangan ng project
+      # Step 2: Ihanda yung .NET environment
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          # Gagamit tayo ng .NET 10
           dotnet-version: "10.0.x"
 
-      # Step 3: I-download at ihanda yung mga NuGet packages ng project
+      # Step 3: I-download ang NuGet packages
       - name: Restore dependencies
         run: dotnet restore
 
-      # Step 4: I-build yung backend para malaman kung walang build errors
-      # --no-restore = huwag nang mag-restore ulit kasi ginawa na natin sa Step 3
+      # Step 4: I-build yung backend
       - name: Build
         run: dotnet build --no-restore
 
-      # Step 5: Patakbuhin yung automated tests natin
-      # --no-build = huwag nang mag-build ulit kasi ginawa na natin sa Step 4
+      # Step 5: Patakbuhin yung automated tests
       - name: Test
         run: dotnet test --no-build
 
       # Step 6: Alamin kung anong Docker tag ang gagamitin
-      # Develop branch = develop tag
-      # main branch = main tag
       - name: Set Docker Image Tag
         if: github.event_name == 'push'
         run: |
@@ -66,35 +60,26 @@ jobs:
             echo "IMAGE_TAG=main" >> "$GITHUB_ENV"
           fi
 
-      # Step 7: I-build yung Docker image ng backend
-      # Tatakbo lang kapag actual push, hindi kapag Pull Request
+      # Step 7: I-build yung Docker image
       - name: Build Docker Image
         if: github.event_name == 'push'
         run: docker build -t issue-tracker-api ./IssueTracker
 
-      # Step 8: Mag-login sa GitHub Container Registry
-      # Tatakbo lang kapag actual push
+      # Step 8: Login sa GitHub Container Registry
       - name: Login to GHCR
         if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
-          # GHCR ang container registry na gagamitin natin
           registry: ghcr.io
-
-          # GitHub account na nag-trigger ng workflow
           username: ${{ github.actor }}
-
-          # Temporary GitHub token na gagamitin para authentication
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 9: Bigyan ng tamang GHCR tag yung Docker image
-      # Develop = :develop
-      # main = :main
+      # Step 9: Bigyan ng tamang GHCR tag
       - name: Tag Docker Image
         if: github.event_name == 'push'
         run: docker tag issue-tracker-api ghcr.io/imseanstaana10/issue-tracker-api:$IMAGE_TAG
 
-      # Step 10: Push Docker Image papuntang GHCR
+      # Step 10: Push Docker Image sa GHCR
       - name: Push Docker Image
         if: github.event_name == 'push'
         run: docker push ghcr.io/imseanstaana10/issue-tracker-api:$IMAGE_TAG
@@ -109,20 +94,44 @@ jobs:
     needs: build
 
     # DEV deployment lamang kapag push sa Develop
-    if:
-      github.event_name == 'push' && github.ref == 'refs/heads/Develop'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/Develop'
 
-      # Securely kunin ang SQL password mula sa GitHub Secret
+    # Securely kunin ang SQL password mula sa GitHub Secret
     env:
       SQL_PASSWORD: ${{ secrets.DEV_SQL_PASSWORD }}
 
     steps:
-      # Step 1: Kunin muna yung repository code
-      # Kailangan ito para makita ng runner yung deploy-dev.sh
+      # Step 1: Kunin yung repository code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Patakbuhin yung deployment script gamit ang Git Bash
+      # Step 2: Patakbuhin ang deployment script
       - name: Deploy to DEV
         shell: bash
         run: ./deploy-dev.sh
+
+  # Deploy job para sa PROD environment
+  deploy-prod:
+    # Gagamitin yung sariling Windows PC natin
+    # na naka-register bilang GitHub self-hosted runner
+    runs-on: self-hosted
+
+    # Hintayin muna na successful ang build job
+    needs: build
+
+    # PROD deployment lamang kapag push sa main
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    # Securely kunin ang SQL password mula sa GitHub Secret
+    env:
+      SQL_PASSWORD: ${{ secrets.PROD_SQL_PASSWORD }}
+
+    steps:
+      # Step 1: Kunin yung repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Patakbuhin ang deployment script
+      - name: Deploy to PROD
+        shell: bash
+        run: ./deploy-prod.sh
