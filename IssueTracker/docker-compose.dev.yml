@@ -1,6 +1,8 @@
-# SQL SERVER SERVICE
 name: issuetracker-dev
+
 services:
+
+  # SQL SERVER SERVICE
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: issue-tracker-sqlserver-dev
@@ -15,11 +17,20 @@ services:
     volumes:
       - sqlserver_data:/var/opt/mssql
 
-  # API SERVICE
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q \"SELECT 1\" || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
+  # API SERVICE
   api:
     image: ghcr.io/imseanstaana10/issue-tracker-api:develop
-
     container_name: issue-tracker-api-dev
 
     environment:
@@ -31,9 +42,9 @@ services:
       - "8080:8080"
 
     depends_on:
-      - sqlserver
+      sqlserver:
+        condition: service_healthy
 
 # DOCKER VOLUMES
-
 volumes:
   sqlserver_data:
