@@ -28,7 +28,24 @@ services:
       retries: 10
       start_period: 20s
 
-  # API SERVICE
+
+  # MIGRATION SERVICE
+  migration:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migration
+
+    container_name: issue-tracker-migration-dev
+
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=IssueTrackerDb_Dev;User Id=sa;Password=${SQL_PASSWORD};TrustServerCertificate=True"
+
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+   # API SERVICE
   api:
     image: ghcr.io/imseanstaana10/issue-tracker-api:develop
     container_name: issue-tracker-api-dev
@@ -36,14 +53,14 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: 8080
-      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=IssueTrackerDb_Dev;User Id=sa;Password=${SQL_PASSWORD};TrustServerCertificate=True"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=IssueTrackerDb_Dev;User Id=sa;Password=${SQL_PASSWORD}"
 
     ports:
       - "8080:8080"
 
     depends_on:
-      sqlserver:
-        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
 
 # DOCKER VOLUMES
 volumes:
