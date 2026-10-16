@@ -13,9 +13,17 @@ public class ProjectService : IProjectService
         _context = context;
     }
 
-    public async Task<List<Project>> GetAllAsync()
+    public async Task<List<Project>> GetAllAsync(string? search = null)
     {
-        return await _context.Projects.ToListAsync();
+        var query = _context.Projects.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query  = query.Where(p => p.Name.Contains(search));
+        }
+
+
+        return await query.ToListAsync();
     }
     public async Task<Project?> GetByIdAsync(int id)
     {
