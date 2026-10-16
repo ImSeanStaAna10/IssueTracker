@@ -17,10 +17,10 @@ namespace IssueTracker.Controllers
             _issueService = issueService;
         }
 
-        [HttpGet] public async Task<IActionResult> GetAll()
+        [HttpGet] public async Task<IActionResult> GetAll([FromQuery] string? search = null)
         {
 
-            var issues = await _issueService.GetAllAsync();
+            var issues = await _issueService.GetAllAsync(search);
 
             // Manual Mapping: List<Issue> → List<IssueResponseDto>
             var response = issues.Select(i => new IssueResponseDto
@@ -28,7 +28,7 @@ namespace IssueTracker.Controllers
                 Id = i.Id,
                 ProjectId = i.ProjectId,
                 Title = i.Title,
-                Description = i.Description,
+                Description = i.Description,    
                 Status = i.Status,
                 Type = i.Type,
                 Priority  = i.Priority  ,

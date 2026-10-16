@@ -14,9 +14,16 @@ namespace IssueTracker.Services.IssueService
             _context = context;
         }
 
-        public async Task<List<Issue>> GetAllAsync()
+        public async Task<List<Issue>> GetAllAsync(string? search = null)
         {
-            return await _context.Issues.ToListAsync();
+            var query = _context.Issues.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(i => i.Title.Contains(search));
+            }
+
+            return await query.ToListAsync();
         }
 
         public async Task<Issue?> GetByIdAsync(int id)
