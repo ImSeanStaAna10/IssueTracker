@@ -2,6 +2,7 @@
 using IssueTracker.Data;
 using Microsoft.EntityFrameworkCore;
 using IssueTracker.Exceptions;
+using IssueTracker.Enums;
 namespace IssueTracker.Services.IssueService
 {
     public class IssueService : IIssueService
@@ -14,9 +15,36 @@ namespace IssueTracker.Services.IssueService
             _context = context;
         }
 
-        public async Task<List<Issue>> GetAllAsync()
+        public async Task<List<Issue>> GetAllAsync(
+            string? search = null, 
+            string? status = null, 
+            IssueType? type = null, 
+            IssuePriority? priority = null
+            )
         {
-            return await _context.Issues.ToListAsync();
+            var query = _context.Issues.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(i => i.Title.Contains(search));
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query = query.Where(i => i.Status == status);
+            }
+
+            if (priority.HasValue)
+            {
+                query = query.Where(i => i.Priority == priority);
+            }
+
+            if(type.HasValue)
+            {
+                query = query.Where(i => i.Type == type);
+            }
+
+            return await query.ToListAsync();
         }
 
         public async Task<Issue?> GetByIdAsync(int id)

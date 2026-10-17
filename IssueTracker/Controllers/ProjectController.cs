@@ -17,9 +17,9 @@ namespace IssueTracker.Controllers
         }
 
 
-        [HttpGet] public async Task<IActionResult> GetAll()
+        [HttpGet] public async Task<IActionResult> GetAll(string? search = null)
         {
-            var projects = await _projectService.GetAllAsync();
+            var projects = await _projectService.GetAllAsync(search);
             // Manual Mapping 
             var response = projects.Select(p => new ProjectResponseDto
             {
