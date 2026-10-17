@@ -24,6 +24,9 @@ namespace IssueTracker
                 );
             });
 
+            // Register OpenAPI services
+            builder.Services.AddOpenApi();
+
             // Register AddExceptionHandler
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
@@ -40,6 +43,22 @@ namespace IssueTracker
 
             // Build the application
             var app = builder.Build();
+
+
+            // Enable OpenAPI/Swagger for API documentation
+            app.MapOpenApi();
+
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint(
+                        
+                        "/openapi/v1.json",
+                        "Issue Tracker API V1"
+                        );
+                });
+            }
 
             // use ExceptionHanlder
             app.UseExceptionHandler();
