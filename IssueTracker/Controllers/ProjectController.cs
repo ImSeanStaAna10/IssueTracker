@@ -1,93 +1,123 @@
+
+using System.Security.Claims;
 using IssueTracker.DTOs.Projects;
 using IssueTracker.Models;
 using IssueTracker.Services.ProjectService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IssueTracker.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ProjectController : ControllerBase
     {
         private readonly IProjectService _projectService;
-        //constructor
+
         public ProjectController(IProjectService projectService)
         {
             _projectService = projectService;
         }
 
-
-        [HttpGet] public async Task<IActionResult> GetAll(string? search = null)
+        private int GetCurrentUserId()
         {
-            var projects = await _projectService.GetAllAsync(search);
-            // Manual Mapping 
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(userIdValue, out var userId))
+            {
+                throw new UnauthorizedAccessException(
+                    "Authenticated user ID is missing or invalid.");
+            }
+
+            return userId;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll(string? search = null)
+        {
+            var userId = GetCurrentUserId();
+
+            var projects = await _projectService.GetAllAsync(userId, search);
+
             var response = projects.Select(p => new ProjectResponseDto
             {
                 Id = p.Id,
                 Name = p.Name,
                 Description = p.Description,
-                CreatedAt = p.CreatedAt ,
-                UpdatedAt = p.UpdatedAt ,   
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt
             });
+
             return Ok(response);
         }
-        [HttpGet("{id}")] public async Task<IActionResult> GetById(int id)
-        {
-            var project = await _projectService.GetByIdAsync(id);
 
-            if(project is null)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var userId = GetCurrentUserId();
+
+            var project = await _projectService.GetByIdAsync(id, userId);
+
+            if (project is null)
             {
                 return NotFound();
             }
-            // Manual Mapping 
+
             var response = new ProjectResponseDto
             {
                 Id = project.Id,
                 Name = project.Name,
                 Description = project.Description,
                 CreatedAt = project.CreatedAt,
-                UpdatedAt = project.UpdatedAt,
-
+                UpdatedAt = project.UpdatedAt
             };
+
             return Ok(response);
         }
-        [HttpPost] public async Task<IActionResult> Create(CreateProjectDto createProjectDto)
+
+        [HttpPost]
+        public async Task<IActionResult> Create(CreateProjectDto createProjectDto)
         {
-            // mapping
-            var projects = new Project
+            var userId = GetCurrentUserId();
+
+            var project = new Project
             {
                 Name = createProjectDto.Name,
-                Description = createProjectDto.Description,
+                Description = createProjectDto.Description
             };
-            var createdProject = await _projectService.CreateAsync(projects);
 
-            // mapping 
+            var createdProject = await _projectService.CreateAsync(project, userId);
+
             var response = new ProjectResponseDto
             {
-
                 Id = createdProject.Id,
                 Name = createdProject.Name,
                 Description = createdProject.Description,
                 CreatedAt = createdProject.CreatedAt,
-                UpdatedAt = createdProject.UpdatedAt,
-
+                UpdatedAt = createdProject.UpdatedAt
             };
+
             return CreatedAtAction(
                 nameof(GetById),
-                new {id = createdProject.Id},
-                response
-                );
+                new { id = createdProject.Id },
+                response);
         }
-        [HttpPut("{id}")] public async Task<IActionResult> Update(int id, UpdateProjectDto updateProjectDto)
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(
+            int id,
+            UpdateProjectDto updateProjectDto)
         {
-            //mapping UpdateProjectDTO to an project model  
+            var userId = GetCurrentUserId();
+
             var project = new Project
             {
                 Name = updateProjectDto.Name,
-                Description = updateProjectDto.Description,
+                Description = updateProjectDto.Description
             };
 
-            var updated = await _projectService.UpdateAsync(id , project);
+            var updated = await _projectService.UpdateAsync(id, project, userId);
 
             if (!updated)
             {
@@ -95,13 +125,14 @@ namespace IssueTracker.Controllers
             }
 
             return NoContent();
-
-
         }
-        [HttpDelete("{id}")] public async Task<IActionResult> Delete(int id)
-        {
 
-            var deleted = await _projectService.DeleteAsync(id);
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var userId = GetCurrentUserId();
+
+            var deleted = await _projectService.DeleteAsync(id, userId);
 
             if (!deleted)
             {
@@ -109,10 +140,6 @@ namespace IssueTracker.Controllers
             }
 
             return NoContent();
-
-
         }
-
     }
-
 }

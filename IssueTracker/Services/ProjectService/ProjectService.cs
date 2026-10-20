@@ -8,39 +8,52 @@ namespace IssueTracker.Services.ProjectService;
 public class ProjectService : IProjectService
 {
     private readonly IssueTrackerDbContext _context;
+
     public ProjectService(IssueTrackerDbContext context)
     {
         _context = context;
     }
 
-    public async Task<List<Project>> GetAllAsync(string? search = null)
+    public async Task<List<Project>> GetAllAsync(
+        int userId,
+        string? search = null)
     {
-        var query = _context.Projects.AsQueryable();
+        var query = _context.Projects
+            .Where(p => p.UserId == userId)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query  = query.Where(p => p.Name.Contains(search));
+            query = query.Where(p => p.Name.Contains(search));
         }
-
 
         return await query.ToListAsync();
     }
-    public async Task<Project?> GetByIdAsync(int id)
+
+    public async Task<Project?> GetByIdAsync(int id, int userId)
     {
         return await _context.Projects
-            .FirstOrDefaultAsync(p => p.Id == id);
-
+            .FirstOrDefaultAsync(p =>
+                p.Id == id && p.UserId == userId);
     }
-    public async Task<Project> CreateAsync(Project project)
+
+    public async Task<Project> CreateAsync(Project project, int userId)
     {
+        project.UserId = userId;
+
         _context.Projects.Add(project);
 
         await _context.SaveChangesAsync();
+
         return project;
     }
-    public async Task<bool> UpdateAsync(int id , Project project)
+
+    public async Task<bool> UpdateAsync(
+        int id,
+        Project project,
+        int userId)
     {
-        var existingProject = await GetByIdAsync(id);
+        var existingProject = await GetByIdAsync(id, userId);
 
         if (existingProject is null)
         {
@@ -49,19 +62,18 @@ public class ProjectService : IProjectService
 
         existingProject.Update(
             project.Name,
-            project.Description
-        );
+            project.Description);
 
         await _context.SaveChangesAsync();
 
         return true;
-
     }
-    public async Task<bool> DeleteAsync(int id)
-    {
-        var existingProject = await GetByIdAsync(id);
 
-        if(existingProject is null)
+    public async Task<bool> DeleteAsync(int id, int userId)
+    {
+        var existingProject = await GetByIdAsync(id, userId);
+
+        if (existingProject is null)
         {
             return false;
         }
@@ -71,9 +83,5 @@ public class ProjectService : IProjectService
         await _context.SaveChangesAsync();
 
         return true;
-
     }
-
 }
-
-   

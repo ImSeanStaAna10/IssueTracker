@@ -1,43 +1,52 @@
 ﻿
 using IssueTracker.Api.Models;
 using IssueTracker.Services.IssueService;
-using Microsoft.AspNetCore.Mvc;
 using IssueTracker.DTOs.Issues;
 using IssueTracker.Enums;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace IssueTracker.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
     public class IssueController : ControllerBase
     {
         private readonly IIssueService _issueService;
 
-        // Constructor: Injects IIssueService through Dependency Injection.
         public IssueController(IIssueService issueService)
         {
             _issueService = issueService;
         }
 
+        private int GetCurrentUserId()
+        {
+            var userIdValue =
+                User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            if (!int.TryParse(userIdValue, out var userId))
+            {
+                throw new UnauthorizedAccessException(
+                    "Authenticated user ID is missing or invalid.");
+            }
 
+            return userId;
+        }
 
-
-
-
-        // GET: api/issue?search=keyword&status=OPEN&type=BUG&priority=HIGH
-        // Retrieves all issues, with optional search and filtering by title, status, type, and priority.
-        // Returns: 200 OK with a collection of IssueResponseDto objects.
-        [HttpGet] 
+        [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] string? search = null,
             [FromQuery] string? status = null,
             [FromQuery] IssueType? type = null,
             [FromQuery] IssuePriority? priority = null)
         {
-            var issues = await _issueService.GetAllAsync(search, status, type, priority);
+            var userId = GetCurrentUserId();
 
-            // Manual Mapping: List<Issue> → List<IssueResponseDto>
+            var issues = await _issueService.GetAllAsync(
+                userId, search, status, type, priority);
+
             var response = issues.Select(i => new IssueResponseDto
             {
                 Id = i.Id,
@@ -54,13 +63,12 @@ namespace IssueTracker.Controllers
             return Ok(response);
         }
 
-        // GET: api/issue/{id}
-        // Retrieves a single issue by its ID.
-        // Returns: 200 OK with the issue, or 404 Not Found if it does not exist.
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var issue = await _issueService.GetByIdAsync(id);
+            var userId = GetCurrentUserId();
+
+            var issue = await _issueService.GetByIdAsync(id, userId);
 
             if (issue is null)
             {
@@ -83,14 +91,12 @@ namespace IssueTracker.Controllers
             return Ok(response);
         }
 
-        // POST: api/issue
-        // Creates a new issue using the provided CreateIssueDto.
-        // Returns: 201 Created with the created issue and its resource location.
-        // Validation and business rules are handled by the DTO, service, and model.
         [HttpPost]
-        public async Task<IActionResult> Create(CreateIssueDto createIssueDto)
+        public async Task<IActionResult> Create(
+            CreateIssueDto createIssueDto)
         {
-            // Manual Mapping: CreateIssueDto → Issue
+            var userId = GetCurrentUserId();
+
             var issue = new Issue
             {
                 ProjectId = createIssueDto.ProjectId,
@@ -100,9 +106,9 @@ namespace IssueTracker.Controllers
                 Type = createIssueDto.Type
             };
 
-            var createdIssue = await _issueService.CreateAsync(issue);
+            var createdIssue =
+                await _issueService.CreateAsync(issue, userId);
 
-            // Manual Mapping: Issue → IssueResponseDto
             var response = new IssueResponseDto
             {
                 Id = createdIssue.Id,
@@ -119,17 +125,16 @@ namespace IssueTracker.Controllers
             return CreatedAtAction(
                 nameof(GetById),
                 new { id = createdIssue.Id },
-                response
-            );
+                response);
         }
 
-        // PUT: api/issue/{id}
-        // Updates an existing issue using the provided UpdateIssueDto.
-        // Returns: 204 No Content if updated, or 404 Not Found if the issue does not exist.
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, UpdateIssueDto updateIssueDto)
+        public async Task<IActionResult> Update(
+            int id,
+            UpdateIssueDto updateIssueDto)
         {
-            // Manual Mapping: UpdateIssueDto → Issue
+            var userId = GetCurrentUserId();
+
             var issue = new Issue
             {
                 ProjectId = updateIssueDto.ProjectId,
@@ -139,7 +144,8 @@ namespace IssueTracker.Controllers
                 Type = updateIssueDto.Type
             };
 
-            var updated = await _issueService.UpdateAsync(id, issue);
+            var updated = await _issueService.UpdateAsync(
+                id, issue, userId);
 
             if (!updated)
             {
@@ -149,13 +155,12 @@ namespace IssueTracker.Controllers
             return NoContent();
         }
 
-        // DELETE: api/issue/{id}
-        // Deletes an existing issue by its ID.
-        // Returns: 204 No Content if deleted, or 404 Not Found if the issue does not exist.
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var deleted = await _issueService.DeleteAsync(id);
+            var userId = GetCurrentUserId();
+
+            var deleted = await _issueService.DeleteAsync(id, userId);
 
             if (!deleted)
             {
@@ -165,14 +170,12 @@ namespace IssueTracker.Controllers
             return NoContent();
         }
 
-        // POST: api/issue/{id}/start
-        // Moves an issue from OPEN to IN_PROGRESS, subject to the model's business rules.
-        // Returns: 204 No Content if successful, or 404 Not Found if the issue does not exist.
-        // Invalid state transitions are handled by the exception-handling pipeline.
         [HttpPost("{id}/start")]
         public async Task<IActionResult> Start(int id)
         {
-            var started = await _issueService.StartAsync(id);
+            var userId = GetCurrentUserId();
+
+            var started = await _issueService.StartAsync(id, userId);
 
             if (!started)
             {
@@ -182,14 +185,12 @@ namespace IssueTracker.Controllers
             return NoContent();
         }
 
-        // POST: api/issue/{id}/resolve
-        // Moves an issue from IN_PROGRESS to RESOLVED, subject to the model's business rules.
-        // Returns: 204 No Content if successful, or 404 Not Found if the issue does not exist.
-        // Invalid state transitions are handled by the exception-handling pipeline.
         [HttpPost("{id}/resolve")]
         public async Task<IActionResult> Resolve(int id)
         {
-            var resolved = await _issueService.ResolveAsync(id);
+            var userId = GetCurrentUserId();
+
+            var resolved = await _issueService.ResolveAsync(id, userId);
 
             if (!resolved)
             {
@@ -199,14 +200,12 @@ namespace IssueTracker.Controllers
             return NoContent();
         }
 
-        // POST: api/issue/{id}/close
-        // Moves an issue from RESOLVED to CLOSED, subject to the model's business rules.
-        // Returns: 204 No Content if successful, or 404 Not Found if the issue does not exist.
-        // Invalid state transitions are handled by the exception-handling pipeline.
         [HttpPost("{id}/close")]
         public async Task<IActionResult> Close(int id)
         {
-            var closed = await _issueService.CloseAsync(id);
+            var userId = GetCurrentUserId();
+
+            var closed = await _issueService.CloseAsync(id, userId);
 
             if (!closed)
             {

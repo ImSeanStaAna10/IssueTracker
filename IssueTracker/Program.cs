@@ -1,7 +1,11 @@
+
 using IssueTracker.Exceptions;
 using IssueTracker.Services.IssueService;
 using IssueTracker.Services.ProjectService;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace IssueTracker
@@ -10,42 +14,77 @@ namespace IssueTracker
     {
         public static void Main(string[] args)
         {
-            // Create a WebApplication builder
             var builder = WebApplication.CreateBuilder(args);
 
             var connectionString =
                 builder.Configuration.GetConnectionString("DefaultConnection");
 
-            // SERIALIZATION: Configure JSON serialization options to handle enum values as strings
+            // JSON serialization: enums are returned as strings
             builder.Services.AddControllers().AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.Converters.Add(
-                    new JsonStringEnumConverter()
-                );
+                    new JsonStringEnumConverter());
             });
 
-            // Register OpenAPI services
-            builder.Services.AddOpenApi();
+            // JWT authentication
+            var jwtKey = builder.Configuration["Jwt:Key"]
+                ?? throw new InvalidOperationException(
+                    "JWT key is missing.");
 
-            // Register AddExceptionHandler
+            var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+            var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+            builder.Services
+                .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters =
+                        new TokenValidationParameters
+                        {
+                            ValidateIssuer = true,
+                            ValidIssuer = jwtIssuer,
+
+                            ValidateAudience = true,
+                            ValidAudience = jwtAudience,
+
+                            ValidateIssuerSigningKey = true,
+                            IssuerSigningKey = new SymmetricSecurityKey(
+                                Encoding.UTF8.GetBytes(jwtKey)),
+
+                            ValidateLifetime = true,
+                            ClockSkew = TimeSpan.FromSeconds(30)
+                        };
+                });
+
+            builder.Services.AddAuthorization();
+
+            // OpenAPI + JWT Bearer security scheme
+            builder.Services.AddOpenApi(options =>
+            {
+                options.AddDocumentTransformer<
+                    BearerSecuritySchemeTransformer>();
+            });
+
+            // Exception handling
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-
-            //standardized error response format.
             builder.Services.AddProblemDetails();
 
-            // Add database context with SQL Server connection
-            builder.Services.AddDbContext<Data.IssueTrackerDbContext>(options =>
-                options.UseSqlServer(connectionString));
+            // Database
+            builder.Services.AddDbContext<Data.IssueTrackerDbContext>(
+                options => options.UseSqlServer(connectionString));
 
-            // Register services for dependency injection
+            // Dependency injection
             builder.Services.AddScoped<IIssueService, IssueService>();
             builder.Services.AddScoped<IProjectService, ProjectService>();
 
-            // Build the application
+            builder.Services.AddScoped<
+                Services.AuthenticationService.IAuthService,
+                Services.AuthenticationService.AuthService>();
+
+            // Build the application AFTER all service registrations
             var app = builder.Build();
 
-
-            // Enable OpenAPI/Swagger for API documentation
+            // OpenAPI document
             app.MapOpenApi();
 
             if (app.Environment.IsDevelopment())
@@ -53,23 +92,20 @@ namespace IssueTracker
                 app.UseSwaggerUI(options =>
                 {
                     options.SwaggerEndpoint(
-                        
                         "/openapi/v1.json",
-                        "Issue Tracker API V1"
-                        );
+                        "Issue Tracker API V1");
                 });
             }
 
-            // use ExceptionHanlder
             app.UseExceptionHandler();
 
-            // Configure the HTTP request pipeline
             app.UseHttpsRedirection();
 
-            // Enable routing and map controller endpoints
+            app.UseAuthentication();
+            app.UseAuthorization();
+
             app.MapControllers();
 
-            // Run the application
             app.Run();
         }
     }

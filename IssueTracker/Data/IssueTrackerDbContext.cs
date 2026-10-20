@@ -14,10 +14,15 @@ namespace IssueTracker.Data
         }
 
         public DbSet<Issue> Issues { get; set; } = null!;
-        public DbSet<Project> Projects { get; set; } = null!;   
+
+        public DbSet<Project> Projects { get; set; } = null!;
+
+        public DbSet<User> Users { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<Issue>()
                 .Property(i => i.Priority)
                 .HasConversion<string>();
@@ -25,6 +30,25 @@ namespace IssueTracker.Data
             modelBuilder.Entity<Issue>()
                 .Property(i => i.Type)
                 .HasConversion<string>();
+
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.Fullname)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.Email)
+                .IsRequired()
+                .HasMaxLength(254);
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.PasswordHash)
+                .IsRequired()
+                .HasMaxLength(100);
         }
     }
 }

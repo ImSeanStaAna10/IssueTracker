@@ -5,17 +5,13 @@ namespace IssueTracker.Services.ProjectService;
 
 public interface IProjectService
 {
-    Task<List<Project>> GetAllAsync(string? search = null);
-    Task<Project?> GetByIdAsync(int id);
-    Task<Project> CreateAsync(Project project);
-    Task<bool> UpdateAsync(int id, Project project);
-    Task<bool> DeleteAsync(int id); 
+    Task<List<Project>> GetAllAsync(int userId, string? search = null);
 
+    Task<Project?> GetByIdAsync(int id, int userId);
 
+    Task<Project> CreateAsync(Project project, int userId);
 
+    Task<bool> UpdateAsync(int id, Project project, int userId);
 
-
-
-
-
+    Task<bool> DeleteAsync(int id, int userId);
 }
