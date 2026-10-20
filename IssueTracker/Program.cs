@@ -97,6 +97,9 @@ namespace IssueTracker
                 });
             }
 
+            app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }))
+   .AllowAnonymous();
+
             app.UseExceptionHandler();
 
             app.UseHttpsRedirection();
