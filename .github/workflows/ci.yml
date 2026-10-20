@@ -99,6 +99,9 @@ jobs:
     # Securely kunin ang SQL password mula sa GitHub Secret
     env:
       SQL_PASSWORD: ${{ secrets.DEV_SQL_PASSWORD }}
+      JWT_KEY: ${{ secrets.JWT_KEY }}
+      JWT_ISSUER: ${{ secrets.JWT_ISSUER }}
+      JWT_AUDIENCE: ${{ secrets.JWT_AUDIENCE }}
 
     steps:
       # Step 1: Kunin yung repository code
@@ -125,6 +128,9 @@ jobs:
     # Securely kunin ang SQL password mula sa GitHub Secret
     env:
       SQL_PASSWORD: ${{ secrets.PROD_SQL_PASSWORD }}
+      JWT_KEY: ${{ secrets.JWT_KEY }}
+      JWT_ISSUER: ${{ secrets.JWT_ISSUER }}
+      JWT_AUDIENCE: ${{ secrets.JWT_AUDIENCE }}
 
     steps:
       # Step 1: Kunin yung repository code
