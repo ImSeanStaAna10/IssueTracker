@@ -1,28 +1,31 @@
-﻿using IssueTracker.Api.Models;
+﻿
+using IssueTracker.Api.Models;
 using IssueTracker.Data;
-using Microsoft.EntityFrameworkCore;
-using IssueTracker.Exceptions;
 using IssueTracker.Enums;
+using IssueTracker.Exceptions;
+using Microsoft.EntityFrameworkCore;
+
 namespace IssueTracker.Services.IssueService
 {
     public class IssueService : IIssueService
     {
         private readonly IssueTrackerDbContext _context;
 
-        // Constructor to inject the IssueTrackerDbContext through DI
         public IssueService(IssueTrackerDbContext context)
         {
             _context = context;
         }
 
         public async Task<List<Issue>> GetAllAsync(
-            string? search = null, 
-            string? status = null, 
-            IssueType? type = null, 
-            IssuePriority? priority = null
-            )
+            int userId,
+            string? search = null,
+            string? status = null,
+            IssueType? type = null,
+            IssuePriority? priority = null)
         {
-            var query = _context.Issues.AsQueryable();
+            var query = _context.Issues
+                .Where(i => i.Project.UserId == userId)
+                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -34,36 +37,39 @@ namespace IssueTracker.Services.IssueService
                 query = query.Where(i => i.Status == status);
             }
 
-            if (priority.HasValue)
+            if (type.HasValue)
             {
-                query = query.Where(i => i.Priority == priority);
+                query = query.Where(i => i.Type == type.Value);
             }
 
-            if(type.HasValue)
+            if (priority.HasValue)
             {
-                query = query.Where(i => i.Type == type);
+                query = query.Where(i => i.Priority == priority.Value);
             }
 
             return await query.ToListAsync();
         }
 
-        public async Task<Issue?> GetByIdAsync(int id)
+        public async Task<Issue?> GetByIdAsync(int id, int userId)
         {
             return await _context.Issues
-                .FirstOrDefaultAsync(i => i.Id == id);
+                .FirstOrDefaultAsync(i =>
+                    i.Id == id &&
+                    i.Project.UserId == userId);
         }
 
-        public async Task<Issue> CreateAsync(Issue issue)
+        public async Task<Issue> CreateAsync(Issue issue, int userId)
         {
             var projectExists = await _context.Projects
-                .AnyAsync(p => p.Id == issue.ProjectId);
+                .AnyAsync(p =>
+                    p.Id == issue.ProjectId &&
+                    p.UserId == userId);
 
             if (!projectExists)
             {
-
-                throw new ProjectNotFoundException("Project Id not exists");
+                throw new ProjectNotFoundException(
+                    "Project not found.");
             }
-
 
             _context.Issues.Add(issue);
 
@@ -72,23 +78,27 @@ namespace IssueTracker.Services.IssueService
             return issue;
         }
 
-        public async Task<bool> UpdateAsync(int id, Issue issue)
+        public async Task<bool> UpdateAsync(
+            int id,
+            Issue issue,
+            int userId)
         {
-            var existingIssue = await GetByIdAsync(id);
+            var existingIssue = await GetByIdAsync(id, userId);
 
             if (existingIssue is null)
             {
                 return false;
             }
 
+            var projectExists = await _context.Projects
+                .AnyAsync(p =>
+                    p.Id == issue.ProjectId &&
+                    p.UserId == userId);
 
-            var projectExist = await _context.Projects
-                .AnyAsync(p => p.Id == issue.ProjectId);
-
-
-            if (!projectExist)
+            if (!projectExists)
             {
-                throw new ProjectNotFoundException("Project Id not Exist");
+                throw new ProjectNotFoundException(
+                    "Project not found.");
             }
 
             existingIssue.ProjectId = issue.ProjectId;
@@ -102,9 +112,9 @@ namespace IssueTracker.Services.IssueService
             return true;
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id, int userId)
         {
-            var existingIssue = await GetByIdAsync(id);
+            var existingIssue = await GetByIdAsync(id, userId);
 
             if (existingIssue is null)
             {
@@ -118,12 +128,10 @@ namespace IssueTracker.Services.IssueService
             return true;
         }
 
-
-
-        // new methods for changing the status of an issue
-        public async Task<bool> StartAsync(int id)
+        public async Task<bool> StartAsync(int id, int userId)
         {
-            var issue = await GetByIdAsync(id);
+            var issue = await GetByIdAsync(id, userId);
+
             if (issue is null)
             {
                 return false;
@@ -132,12 +140,15 @@ namespace IssueTracker.Services.IssueService
             issue.Start();
 
             await _context.SaveChangesAsync();
+
             return true;
         }
-        public async Task<bool> ResolveAsync(int id)
+
+        public async Task<bool> ResolveAsync(int id, int userId)
         {
-            var issue = await GetByIdAsync(id);
-            if(issue is null)
+            var issue = await GetByIdAsync(id, userId);
+
+            if (issue is null)
             {
                 return false;
             }
@@ -145,19 +156,24 @@ namespace IssueTracker.Services.IssueService
             issue.Resolve();
 
             await _context.SaveChangesAsync();
+
             return true;
         }
-        public async Task<bool> CloseAsync(int id)
+
+        public async Task<bool> CloseAsync(int id, int userId)
         {
-            var issue = await GetByIdAsync(id);
+            var issue = await GetByIdAsync(id, userId);
+
             if (issue is null)
             {
                 return false;
             }
+
             issue.Close();
+
             await _context.SaveChangesAsync();
+
             return true;
         }
-
     }
 }
